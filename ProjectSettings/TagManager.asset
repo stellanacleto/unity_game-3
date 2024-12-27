@@ -6,6 +6,12 @@ TagManager:
   tags:
   - Spike
   - Enemy
+  - Potion
+  - Ship
+  - Fruit
+  - Fruits
+  - Saw
+  - Win
   layers:
   - Default
   - TransparentFX
@@ -14,7 +20,7 @@ TagManager:
   - Water
   - UI
   - 
-  - 
+  - Wall
   - Ground
   - GameOver
   - 

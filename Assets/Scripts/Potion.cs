@@ -7,7 +7,6 @@ public class Potion : MonoBehaviour
     private SpriteRenderer sr;
     private CapsuleCollider2D capsule;
     public GameObject collected;
-    //public int Score;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -21,12 +20,10 @@ public class Potion : MonoBehaviour
     {
         if(collider.gameObject.tag == "Player")
         {
+            AudioManager.instance.PlayPickupSound();
             sr.enabled = false;
             capsule.enabled = false;
             collected.SetActive(true);
-
-            //GameController.instance.totalScore += Score;
-            //GameController.instance.UpdateScoreText();
             
             GameController.instance.AddOxygen(10f); // Adiciona 10 segundos de oxigênio
 

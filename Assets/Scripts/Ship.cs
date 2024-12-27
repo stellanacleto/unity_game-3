@@ -20,6 +20,7 @@ public class Ship : MonoBehaviour
     {
         if(collider.gameObject.tag == "Player")
         {
+            AudioManager.instance.PlayPickupSound();
             sr.enabled = false;
             boxCollShip.enabled = false;
             collectedShip.SetActive(true);

@@ -8,20 +8,30 @@ public class GameController : MonoBehaviour
 {
 
     public int totalShip;
-    public int oxygen = 30;
+    public float oxygen = 20f;
     public TextMeshProUGUI shipText;
 
-    public float oxygenTime = 30f; // Tempo inicial de oxigênio
     public TextMeshProUGUI oxygenText;
 
     public GameObject gameOver;
     public GameObject pauseMenu;
-
-    private bool isGameOver = false;
+    public GameObject win;
+    private bool isOxygenPaused = false; // Controle do estado do cronômetro
+    public bool isGameOver = false;
+    public bool wasGameOver = false;
     private bool isPaused = false;
+    public bool isRestart = false;
     public static GameController instance;
 
-        void Start()
+    private void Awake()
+    {
+        if (instance == null)
+        {
+            instance = this;           
+        }      
+    }
+
+    void Start()
     {
         instance = this;
         UpdateShipText();
@@ -34,53 +44,99 @@ public class GameController : MonoBehaviour
         HandlePause(); // Verifica a tecla de pausa
     }
 
-    public void UpdateShipText()
+    public void PauseOxygenCountdown()
     {
-        shipText.text = totalShip.ToString();
+        AudioManager.instance.StopWarningSound();
+        isOxygenPaused = true;
+    }
+
+    public void ResumeOxygenCountdown()
+    {
+        isOxygenPaused = false;
     }
 
     public void UpdateOxygenText()
     {
-        oxygenText.text = Mathf.CeilToInt(oxygenTime).ToString() + "s";
+        oxygenText.text = Mathf.CeilToInt(oxygen).ToString();
+    }
+
+    public void UpdateShipText()
+    {
+        shipText.text = Mathf.CeilToInt(totalShip).ToString();
     }
 
     public void AddOxygen(float amount)
     {
-        oxygenTime += amount;
+        oxygen += amount;
         UpdateOxygenText();
     }
 
-    public void ReduceOxygen(int amount)
+    public void ReduceOxygen(float amount)
     {
         oxygen -= amount; // Subtrai o oxigênio
+        if(oxygen < 0)
+        {
+            oxygen = 0;
+        }
+
         UpdateOxygenText();
 
-        if (oxygen <= 0)
-        {
+        if (oxygen <= 0 && !isGameOver)
+        {          
             ShowGameOver(); // Game Over se o oxigênio acabar
         }
+
     }
 
     public void ShowGameOver()
     {
         gameOver.SetActive(true);
         isGameOver = true;
+        wasGameOver = true;
         Time.timeScale = 0f;
+        AudioManager.instance.StopBackgroundMusic();
+        AudioManager.instance.StopWarningSound();
     }
 
     public void RestartGame(string lvlName)
     {
+        if(!wasGameOver)
+        {
+            isRestart = true;
+        }
+        wasGameOver = false;
+        AudioManager.instance.PlayBackgroundMusic();
         Time.timeScale = 1;
         SceneManager.LoadScene(lvlName);
     }
 
     private IEnumerator OxygenCountdown()
     {
-        while (oxygenTime > 0 && !isGameOver)
+        while (oxygen > 0 && !isGameOver)
         {
-            yield return new WaitForSeconds(1f);
-            oxygenTime -= 1f;
-            UpdateOxygenText();
+            if (!isOxygenPaused)
+            {
+                yield return new WaitForSeconds(1f);
+                ReduceOxygen(1f);
+            }
+            if (oxygen <= 10f && !AudioManager.instance.isWarningPlaying)
+            {
+                AudioManager.instance.PlayWarningSound();
+            }
+            if (oxygen == 0f)
+            {
+                AudioManager.instance.StopWarningSound();
+            }
+            else if (oxygen > 10f || isGameOver || isPaused)
+            {
+                AudioManager.instance.StopWarningSound();
+            }
+
+            if (isOxygenPaused)
+            {
+                yield return null; // Pausa o cronômetro
+            }
+            
         }
 
         if (!isGameOver)
@@ -106,9 +162,11 @@ public class GameController : MonoBehaviour
 
     public void PauseGame()
     {
+        AudioManager.instance.StopBackgroundMusic();
+        AudioManager.instance.StopWarningSound();
         isPaused = true;
         pauseMenu.SetActive(true);
-        Time.timeScale = 0; // Congela o jogo
+        Time.timeScale = 0; // Congela o jogo    
     }
 
     public void ResumeGame()
@@ -116,5 +174,27 @@ public class GameController : MonoBehaviour
         isPaused = false;
         pauseMenu.SetActive(false);
         Time.timeScale = 1; // Retoma o jogo
+        AudioManager.instance.PlayBackgroundMusic();
+    }
+
+    public void Win()
+    {
+        AudioManager.instance.StopBackgroundMusic();
+        AudioManager.instance.StopWarningSound();
+        isPaused = true;
+        win.SetActive(true);
+        Time.timeScale = 0; // Congela o jogo    
+    }
+
+    public void Menu()
+    {
+        FruitManager.instance.ResetFruits();
+        SceneManager.LoadScene("menu");
+        isPaused = false;
+        isRestart = false;
+        isGameOver = false;
+        Time.timeScale = 1;
+        AudioManager.instance.PlayBackgroundMusic();
+        
     }
 }
